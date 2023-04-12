@@ -67,13 +67,17 @@ def verifica_fluxo(r, f):
 
 # Gera uma rede residual a partir de uma rede original r e um fluxo f
 def gera_rede_residual(r, f):
-    if verifica_fluxo(r,f) == False or f == {}:                             # Se o fluxo for inválido, retorna None
+    if verifica_fluxo(r,f) == False:                             # Se o fluxo for inválido, retorna None
         return None
     Gf = Grafo(len(r.vertices))                                              
     for aresta in r.c:
-            if r.c[aresta] - f[aresta] > 0:                                     # Se f(u,v) < c(u,v), adiciona a aresta (u,v) na rede residual com valor c(u,v) - f(u,v).
+            if aresta not in f:
+                Gf.add_aresta(aresta[0],aresta[1],r.c[aresta])               # Se a aresta (u,v) não estiver no fluxo, adiciona a aresta (u,v) na rede residual com valor c(u,v)
+            elif r.c[aresta] - f[aresta] > 0:                                     # Se f(u,v) < c(u,v), adiciona a aresta (u,v) na rede residual com valor c(u,v) - f(u,v).
                 Gf.add_aresta(aresta[0],aresta[1],r.c[aresta] - f[aresta])
-            Gf.add_aresta(aresta[1],aresta[0],f[aresta])                        # Para cada aresta (u,v), adiciona aresta a aresta (v,u) com valor de f(u,v)
+                Gf.add_aresta(aresta[1],aresta[0],f[aresta])                        # Para cada aresta (u,v), adiciona a aresta (v,u) com valor de f(u,v)
+            else:
+                Gf.add_aresta(aresta[1],aresta[0],r.c[aresta])                        # Para cada aresta (u,v), adiciona a aresta (v,u) com valor de f(u,v)
     return Gf
 
 #------------------------------------------------------------------------------------------------------
@@ -101,22 +105,24 @@ def Edmonds_Karp(g,s,t):
     if verifica_rede(g) == False:
         return None
     f = {}                                  # Dicionário que armazena o fluxo f(u,v) de cada aresta (u,v)
-    for aresta in g.c:
-        f[aresta] = 0
-    Gf = gera_rede_residual(g,f)            # Gera a rede residual a partir da rede original e do fluxo f
     while True:
+        Gf = gera_rede_residual(g,f)            # Gera a rede residual a partir da rede original e do fluxo f
         p = encontra_caminho(Gf,s,t)        # Encontra um caminho entre s e t
         if p == None:                       # Se não existir caminho entre s e t, retorna o fluxo f
             return f
         cf = min(p.values())                # cf é o valor do fluxo máximo que pode ser adicionado ao fluxo f
         for aresta in p:
             if aresta in g.c:               # Se a aresta (u,v) está na rede original, adiciona cf ao fluxo f(u,v)
-                f[aresta] += cf
+                if aresta in f:
+                    f[aresta] += cf
+                else:
+                    f[aresta] = cf
             else:                           # Se a aresta (u,v) não está na rede original, subtrai cf do fluxo f(v,u)
-                f[(aresta[1],aresta[0])] -= cf
-        Gf = gera_rede_residual(Gf,f)        # Gera a rede residual a partir da rede original e do fluxo f
-        if Gf == None:                      # Se a rede residual for inválida, retorna None
-            return None
+                if aresta in f:
+                    if f[(aresta[1],aresta[0])] - cf > 0:
+                        f[(aresta[1],aresta[0])] -= cf
+                    else:
+                        f.pop((aresta[1],aresta[0]))
         
 
 
@@ -189,4 +195,9 @@ path = encontra_caminho(rf, s, t)
 assert (s,v2) in path
 assert (v2,v3) in path
 assert (v3,t) in path
-#print(Edmonds_Karp(r,s,t))
+print(Edmonds_Karp(r,s,t))
+# f3 = {}
+# for aresta in r.c:
+#     f3[aresta] = 0
+# rg = gera_rede_residual(r, f3)
+# print(rg.c)
