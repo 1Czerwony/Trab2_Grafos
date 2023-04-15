@@ -61,6 +61,7 @@ def verifica_fluxo(r, f):
         if f[aresta] > r.c[aresta] or f[aresta] < 0:            # Se o fluxo de uma aresta for maior que sua capacidade ou menor que 0, retorna False
             return False
     return True
+
 #------------------------------------------------------------------------------------------------------
 
 # Gera uma rede residual a partir de uma rede original r e um fluxo f
@@ -81,6 +82,7 @@ def gera_rede_residual(r, f):
 #------------------------------------------------------------------------------------------------------
 
 # Encontra e retorna as arestas de um caminho entre s e t em uma rede r
+# s e t devem ser os vértices de origem e destino, respectivamente, caso contrário, o algoritmo não funcionará corretamente
 def encontra_caminho(r, s, t):
     if r.c == {} or r.vertices == []:       # Retorna None se a rede for vazia
         return None
@@ -99,21 +101,22 @@ def encontra_caminho(r, s, t):
 
 #------------------------------------------------------------------------------------------------------
 
+# Algoritmo de Edmonds-Karp para encontrar o fluxo máximo em uma rede
+# s e t devem ser os vértices de origem e destino, respectivamente, caso contrário, o algoritmo não funcionará corretamente
 def Edmonds_Karp(g,s,t):
-    if verifica_rede(g) == False:
+    if verifica_rede(g) == False:                       # Se a rede não for válida, retorna None
         return None
     f={}
     for aresta in g.c:
         f[aresta] = 0
     while True:
         Gf = gera_rede_residual(g,f)    
-        #print(Gf.c)
-        p = encontra_caminho(Gf,s,t)                    
+        p = encontra_caminho(Gf,s,t)                    # p é um caminho encontrado entre s e t na rede residual
         if p == None:                                   # Se não existir caminho entre s e t, retorna o fluxo f
             return f
         cf = min(p.values())                            # cf é o valor de fluxo máximo que pode ser adicionado ao fluxo f
         for aresta in p:
-            if aresta in g.c:                           # Se a aresta (u,v) de p pertence à rede original, incrementa o fluxo f(u,v) em cf
+            if aresta in g.c:                           # Se uma aresta (u,v) de p pertence à rede original, incrementa o fluxo f(u,v) em cf
                 f[aresta] += cf
             else:                                       # Se a aresta (u,v) de p não pertence à rede original, decrementa o fluxo f(v,u) em cf
                 f[(aresta[1],aresta[0])] -= cf
@@ -125,7 +128,7 @@ g = Grafo(2)
 g.add_aresta(0,1,1)
 g.add_aresta(1,0,2)
 
-#assert verifica_rede(g) == False
+assert verifica_rede(g) == False
 
 # Rede da figura 26.1 do livro
 s,v1,v2,v3,v4,t = 0,1,2,3,4,5
