@@ -20,12 +20,12 @@ class Grafo:     # Classe que representa um Grafo
 #------------------------------------------------------------------------------------------------------
 
 # Busca em largura em um grafo
-def BFS(g, s): 
-    for u in range(len(g.vertices)):
+def BFS(g, s): # Argumentos: g é um grafo, s é o vértice de origem da busca
+    for u in range(len(g.vertices)):                            # Para cada vértice u do grafo, define cor como BRANCO, pai como None e distância como infinito
         g.vertices[u][1] = 'B'
         g.vertices[u][2] = None
         g.vertices[u][3] = math.inf
-    g.vertices[s][1] = 'C'
+    g.vertices[s][1] = 'C'                                      # Define cor de s como CINZA, pai como None e distância como 0
     g.vertices[s][2] = None
     g.vertices[s][3] = 0                   
     q = deque()
@@ -140,8 +140,29 @@ def gera_rede_aleatória(n): # Argumentos: n é o número de vértices da rede
                 if random.random() <= p:                    # Para cada par de vértices, sorteia uma aresta com probabilidade p
                     g.add_aresta(i,j,random.randint(1,50))
     return g,0,n-1
-            
-#TESTES------------------------------------------------------------------------------------------------------
+
+#TESTES BFS------------------------------------------------------------------------------------------------------
+
+grafo = Grafo(6)
+grafo.add_aresta(0,1,4)
+grafo.add_aresta(0,2,2)
+grafo.add_aresta(1,3,5)
+grafo.add_aresta(2,3,1)
+grafo.add_aresta(2,4,6)
+grafo.add_aresta(3,5,3)
+grafo.add_aresta(4,5,1)
+BFS(grafo,0)
+
+# Testa se os vértices estão sendo visitados na ordem correta
+                           #[vizinhos, cor, pai, distancia]
+assert grafo.vertices[0] == [[1,2], 'P', None, 0]
+assert grafo.vertices[1] == [[3], 'P', 0, 1]
+assert grafo.vertices[2] == [[3,4], 'P', 0, 1]
+assert grafo.vertices[3] == [[5], 'P', 1, 2]
+assert grafo.vertices[4] == [[5], 'P', 2, 2]
+assert grafo.vertices[5] == [[], 'P', 3, 3]
+
+#TESTES REDES------------------------------------------------------------------------------------------------------
 
 # Rede inválida (arestas antiparalelas)
 g = Grafo(2)
@@ -149,7 +170,7 @@ g.add_aresta(0,1,1)
 g.add_aresta(1,0,2)
 assert verifica_rede(g,0,1) == False
 
-# Rede inválida (não existe caminho entre s e t que passe pelo vértice 2)
+# Rede inválida (não existe caminho entre 0 e 3 que passe pelo vértice 2)
 k = Grafo(4)
 k.add_aresta(0,1,1)
 k.add_aresta(1,3,1)
@@ -170,6 +191,25 @@ r.add_aresta(v4,v3,7)
 r.add_aresta(v4,t,4)
 assert verifica_rede(r,s,t) == True
 
+# Exemplo de rede com 7 vértices e 12 arestas
+s1,a,b,c,d,e,t1 = 0,1,2,3,4,5,6
+h = Grafo(7)
+h.add_aresta(s1,a,5)
+h.add_aresta(s1,b,7)
+h.add_aresta(s1,c,4)
+h.add_aresta(a,b,1)
+h.add_aresta(a,d,3)
+h.add_aresta(b,c,2)
+h.add_aresta(b,e,5)
+h.add_aresta(b,d,4)
+h.add_aresta(c,e,4)
+h.add_aresta(d,t1,9)
+h.add_aresta(e,d,1)
+h.add_aresta(e,t1,6)
+assert verifica_rede(h,s1,t1) == True
+
+#TESTES FLUXO------------------------------------------------------------------------------------------------------
+
 # Fluxo da figura 26.1 do livro (válido na rede r)
 f = {}
 f[(s,v1)] = 11
@@ -187,6 +227,8 @@ assert verifica_fluxo(r,f) == True
 f2 = {}
 f2[(s,v1)] = 17
 assert verifica_fluxo(r,f2) == False
+
+#TESTES REDES RESIDUAIS------------------------------------------------------------------------------------------
 
 # Rede residual inválida
 assert gera_rede_residual(r,f2) == None
@@ -209,11 +251,27 @@ assert rf.c[(v3,t)] == 5
 assert rf.c[(t,v3)] == 15
 assert rf.c[(t,v4)] == 4
 
+#TESTES CAMINHOS---------------------------------------------------------------------------------------------------
+
 # Caminho entre s e t da figura 26.4(b) do livro
 path = encontra_caminho(rf, s, t)
-assert (s,v2) in path
-assert (v2,v3) in path
-assert (v3,t) in path
+assert (s, v2) in path
+assert (v2, v3) in path
+assert (v3, t) in path
+for aresta in rf.c:
+    if aresta != (v3, t) and aresta != (s, v2) and aresta != (v2, v3):
+        assert aresta not in path
+
+# Caminho entre s1 e t1 da rede h
+path2 = encontra_caminho(h, s1, t1)
+assert (s1, a) in path2
+assert (a, d) in path2
+assert (d, t1) in path2
+for aresta in h.c:
+    if aresta != (s1, a) and aresta != (a, d) and aresta != (d, t1):
+        assert aresta not in path2
+
+#TESTES ALGORITMO EDMONDS-KARP------------------------------------------------------------------------------------
 
 # Fluxo máximo da figura 26.6(e) do livro 
 f3 = Edmonds_Karp(r,s,t)
@@ -227,25 +285,6 @@ assert f3[(v3,t)] == 19
 assert f3[(v4,v3)] == 7
 assert f3[(v4,t)] == 4
 assert verifica_fluxo(r,f3) == True
-
-# -----------------------------------------------------------------------------------------------
-
-# Exemplo de rede com 7 vértices e 12 arestas
-s1,a,b,c,d,e,t1 = 0,1,2,3,4,5,6
-h = Grafo(7)
-h.add_aresta(s1,a,5)
-h.add_aresta(s1,b,7)
-h.add_aresta(s1,c,4)
-h.add_aresta(a,b,1)
-h.add_aresta(a,d,3)
-h.add_aresta(b,c,2)
-h.add_aresta(b,e,5)
-h.add_aresta(b,d,4)
-h.add_aresta(c,e,4)
-h.add_aresta(d,t1,9)
-h.add_aresta(e,d,1)
-h.add_aresta(e,t1,6)
-assert verifica_rede(h,s1,t1) == True
 
 # Verifica fluxo máximo da rede h gerado pelo algoritmo Edmonds_Karp
 f4 = Edmonds_Karp(h,s1,t1)
@@ -263,28 +302,26 @@ assert f4[(d,t1)] == 8
 assert f4[(e,d)] == 1
 assert f4[(e,t1)] == 6
 
-# -----------------------------------------------------------------------------------------------
+#TESTES REDES ALEATÓRIAS-----------------------------------------------------------------------------------------------
 
-# Gera rede aleatória inválida (menos de 2 vértices)
+# Redes aleatórias inválidas (menos de 2 vértices)
 assert gera_rede_aleatória(1) == None
 assert gera_rede_aleatória(0) == None
 assert gera_rede_aleatória(-1) == None
  
+print('Testando Redes Aleatórias...')
+
 # Gera 100 redes aleatórias com 100 vértices e verifica se são válidas
-inicio = time.time()
 for i in range(100):
     #n = random.randint(2,200)
     rede,s2,t2 = gera_rede_aleatória(100)
     assert verifica_rede(rede,0,99) == True
-final = time.time()
-print('Tempo de execução: %2fs' % (final - inicio))
 
 # Gera 100 redes aleatórias com 100 vértices e verifica se o fluxo máximo é válido
-inicio = time.time()
 for i in range(100):
     #n = random.randint(2,200)
     rede,s2,t2 = gera_rede_aleatória(100)
     fluxo = Edmonds_Karp(rede,s2,t2)
     assert verifica_fluxo(rede,fluxo) == True
-final = time.time()
-print('Tempo de execução: %2fs' % (final - inicio))
+    
+print('Testes concluídos com sucesso!')
